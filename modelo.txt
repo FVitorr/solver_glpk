@@ -1,0 +1,234 @@
+var barraVestido >= 0;
+var barraCalca >= 0;
+var barraCamisa >= 0;
+var pence >= 0;
+var apertarCalca >= 0;
+var apertarCamisa >= 0;
+var apertarVestido >= 0;
+var aumentarCalca >= 0;
+var aumentarCamisa >= 0;
+var aumentarVestido >= 0;
+var cinzir >= 0;
+var ziperCalca >= 0;
+var ziperJaqueta >= 0;
+var ziperVestido >= 0;
+
+param lucroBarraVestido := 35;
+param lucroBarraCalca := 25;
+param lucroBarraCamisa := 25;
+param lucroPence := 15;
+param lucroApertarCalca := 30;
+param lucroApertarCamisa := 30;
+param lucroApertarVestido := 40;
+param lucroAumentarCalca := 25;
+param lucroAumentarCamisa := 30;
+param lucroAumentarVestido := 35;
+param lucroCinzir := 15;
+param lucroZiperCalca := 25;
+param lucroZiperJaqueta := 35;
+param lucroZiperVestido := 30;
+
+# Custo de energia (em R$) por serviço
+param custoBarraVestido := 0.1228;
+param custoBarraCalca := 0.0702;
+param custoBarraCamisa := 0.0750;
+param custoPence := 0.1124;
+param custoApertarCalca := 0.1444;
+param custoApertarCamisa := 0.0914;
+param custoApertarVestido := 0.1600;
+param custoAumentarCalca := 0.1228;
+param custoAumentarCamisa := 0.0852;
+param custoAumentarVestido := 0.1334;
+param custoCinzir := 0.0852;
+param custoZiperCalca := 0.0750;
+param custoZiperJaqueta := 0.1500;
+param custoZiperVestido := 0.0750;
+
+# Total de horas de trabalho disponível por mês (funcionários)
+param horasDisponiveis := 168 + 94.5 * 2; # Para 1 funcionário e 2 meio periodo
+
+# Restrição de número máximo de produções por mês
+param maxCinzir := 18;
+param maxAumentarVestido := 10;
+param maxAumentarCalca := 18;
+param maxZiperJaqueta := 16;
+param maxAumentarCamisa := 10;
+# as restrições abaixo foram adicionadas para limitarmos o problema aos poucos
+param maxBarraCalca := 300;
+param maxBarraCamisa := 200;
+param maxZiperVestido := 150;
+param maxZiperCalca := 325;
+param maxBarraVestido := 150;
+param maxApertarCamisa := 200;
+param maxApertarCalca := 225;
+param maxApertarVestido := 50;
+param maxPence := 315;
+
+# Definição do tempo de uso das máquinas para cada tipo de serviço
+param tempoOverlockBarraVestido := 5;
+param tempoRetaBarraVestido := 15;
+param tempoOverlockBarraCalca := 5;
+param tempoRetaBarraCalca := 8;
+param tempoGaloneiraBarraCamisa := 10;
+param tempoRetaBarraCamisa := 10;
+param tempoRetaPence := 15;
+param tempoOverlockApertarCalca := 8;
+param tempoRetaApertarCalca := 17;
+param tempoOverlockApertarCamisa := 8;
+param tempoRetaApertarCamisa := 10;
+param tempoOverlockApertarVestido := 5;
+param tempoRetaApertarVestido := 20;
+param tempoOverlockAumentarCalca := 5;
+param tempoRetaAumentarCalca := 15;
+param tempoOverlockAumentarCamisa := 5;
+param tempoRetaAumentarCamisa := 10;
+param tempoOverlockAumentarVestido := 10;
+param tempoRetaAumentarVestido := 15;
+param tempoOverlockCinzir := 5;
+param tempoRetaCinzir := 10;
+param tempoRetaZiperCalca := 10;
+param tempoRetaZiperJaqueta := 20;
+param tempoRetaZiperVestido := 10;
+
+# Disponibilidade das máquinas (em minutos por mês)
+param horasOverlockDisponiveis := 168 * 60; # Exemplo: 168 horas por mês
+param horasRetaDisponiveis := 168 * 60; # Exemplo: 168 horas por mês
+
+# Função objetivo: Maximizar o lucro líquido
+maximize lucroTotal: 
+    (lucroBarraVestido - custoBarraVestido) * barraVestido +
+    (lucroBarraCalca - custoBarraCalca) * barraCalca +
+    (lucroBarraCamisa - custoBarraCamisa) * barraCamisa +
+    (lucroPence - custoPence) * pence +
+    (lucroApertarCalca - custoApertarCalca) * apertarCalca +
+    (lucroApertarCamisa - custoApertarCamisa) * apertarCamisa +
+    (lucroApertarVestido - custoApertarVestido) * apertarVestido +
+    (lucroAumentarCalca - custoAumentarCalca) * aumentarCalca +
+    (lucroAumentarCamisa - custoAumentarCamisa) * aumentarCamisa +
+    (lucroAumentarVestido - custoAumentarVestido) * aumentarVestido +
+    (lucroCinzir - custoCinzir) * cinzir +
+    (lucroZiperCalca - custoZiperCalca) * ziperCalca +
+    (lucroZiperJaqueta - custoZiperJaqueta) * ziperJaqueta +
+    (lucroZiperVestido - custoZiperVestido) * ziperVestido;
+
+# Restrições de tempo de mão de obra (em minutos)
+subject to tempoMaoDeObra:
+    30 * barraVestido + 15 * barraCalca + 15 * barraCamisa + 15 * pence + 35 * apertarCalca + 30 * apertarCamisa + 45 * apertarVestido + 35 * aumentarCalca + 20 * aumentarCamisa + 40 * aumentarVestido + 15 * cinzir + 20 * ziperCalca + 30 * ziperJaqueta + 20 * ziperVestido <= horasDisponiveis * 60;
+
+# Restrição do tempo de uso das máquinas
+subject to tempoUsoOverlock:
+    tempoOverlockBarraVestido * barraVestido +
+    tempoOverlockBarraCalca * barraCalca +
+    tempoOverlockApertarCalca * apertarCalca +
+    tempoOverlockApertarCamisa * apertarCamisa +
+    tempoOverlockApertarVestido * apertarVestido +
+    tempoOverlockAumentarCalca * aumentarCalca +
+    tempoOverlockAumentarCamisa * aumentarCamisa +
+    tempoOverlockAumentarVestido * aumentarVestido +
+    tempoOverlockCinzir * cinzir <= horasOverlockDisponiveis;
+
+subject to tempoUsoReta:
+    tempoRetaBarraVestido * barraVestido +
+    tempoRetaBarraCalca * barraCalca +
+    tempoRetaBarraCamisa * barraCamisa +
+    tempoRetaPence * pence +
+    tempoRetaApertarCalca * apertarCalca +
+    tempoRetaApertarCamisa * apertarCamisa +
+    tempoRetaApertarVestido * apertarVestido +
+    tempoRetaAumentarCalca * aumentarCalca +
+    tempoRetaAumentarCamisa * aumentarCamisa +
+    tempoRetaAumentarVestido * aumentarVestido +
+    tempoRetaCinzir * cinzir +
+    tempoRetaZiperCalca * ziperCalca +
+    tempoRetaZiperJaqueta * ziperJaqueta +
+    tempoRetaZiperVestido * ziperVestido <= horasRetaDisponiveis;
+
+# Restrição de número máximo de produções por mês
+subject to maxCinzirProd:
+    cinzir <= maxCinzir;
+
+subject to maxAumentarVestidoProd:
+    aumentarVestido <= maxAumentarVestido;
+
+subject to maxAumentarCalcaProd:
+    aumentarCalca <= maxAumentarCalca;
+
+subject to maxZiperJaquetaProd:
+    ziperJaqueta <= maxZiperJaqueta;
+
+subject to maxAumentarCamisaProd:
+    aumentarCamisa <= maxAumentarCamisa;
+
+subject to maxBarraCalcaProd:
+	barraCalca <= maxBarraCalca;
+
+subject to maxBarraCamisaProd:
+	barraCamisa <= maxBarraCamisa;
+
+subject to maxZiperVestidoProd:
+	ziperVestido <= maxZiperVestido;
+
+subject to maxZiperCalcaProd:
+	ziperCalca <= maxZiperCalca;
+
+subject to maxBarraVestidoProd:
+	barraVestido <= maxBarraVestido;
+
+subject to maxApertarCamisaProd:
+	apertarCamisa <= maxApertarCamisa;
+
+subject to maxApertarCalcaProd:
+	apertarCalca <= maxApertarCalca;
+
+subject to maxApertarVestidoProd:
+	apertarVestido <= maxApertarVestido;
+
+subject to maxPenceProd:
+	pence <= maxPence;
+
+# minimos
+subject to minCinzirProd:
+    cinzir >= 0.4 * maxCinzir;
+
+subject to minAumentarVestidoProd:
+    aumentarVestido >= 0.4 * maxAumentarVestido;
+
+subject to minAumentarCalcaProd:
+    aumentarCalca >= 0.4 * maxAumentarCalca;
+
+subject to minZiperJaquetaProd:
+    ziperJaqueta >= 0.4 * maxZiperJaqueta;
+
+subject to minAumentarCamisaProd:
+    aumentarCamisa >= 0.4 * maxAumentarCamisa;
+
+subject to minBarraCalcaProd:
+    barraCalca >= 0.4 * maxBarraCalca;
+
+subject to minBarraCamisaProd:
+    barraCamisa >= 0.4 * maxBarraCamisa;
+
+subject to minZiperVestidoProd:
+    ziperVestido >= 0.4 * maxZiperVestido;
+
+subject to minZiperCalcaProd:
+    ziperCalca >= 0.4 * maxZiperCalca;
+
+subject to minBarraVestidoProd:
+    barraVestido >= 0.4 * maxBarraVestido;
+
+subject to minApertarCamisaProd:
+    apertarCamisa >= 0.4 * maxApertarCamisa;
+
+subject to minApertarCalcaProd:
+    apertarCalca >= 0.4 * maxApertarCalca;
+
+subject to minApertarVestidoProd:
+    apertarVestido >= 0.4 * maxApertarVestido;
+
+subject to minPenceProd:
+    pence >= 0.4 * maxPence;
+
+solve;
+
+display lucroTotal, barraVestido, barraCalca, barraCamisa, pence, apertarCalca, apertarCamisa, apertarVestido, aumentarCalca, aumentarCamisa, aumentarVestido, cinzir, ziperCalca, ziperJaqueta, ziperVestido;

@@ -8,7 +8,7 @@ from ImportFile import ImportFile
 import pyomo.environ as pyo
 
 PORC_MIN_SERVICO = 0.4
-HORAS_TRABALHADAS_DISPONIVEIS = 176 * 60
+HORAS_TRABALHADAS_DISPONIVEIS = 168 + 94.5 * 2
 
 class Solver():
     def __init__(self, Arquivo):
@@ -24,9 +24,15 @@ class Solver():
 
         # Definicao do conjunto de servicos
         modelo.SERVICOS = {s.DSC_SERVICO for s in self.servicos}
+        print(modelo.SERVICOS)
 
         # Variaveis de decisao: Quantidade de cada servico a ser feito
-        modelo.quantidade = Var(modelo.SERVICOS, within=NonNegativeReals)
+        modelo.quantidade = Var(modelo.SERVICOS, within=NonNegativeReals, initialize={s.DSC_SERVICO: s.AVG_SERVICO for s in self.servicos})
+
+        modelo.tempo_max = Var(within=NonNegativeReals)
+
+        # modelo.quantidade = Var(modelo.SERVICOS, within=NonNegativeReals)
+        print(modelo.quantidade)
 
         # Funcao objetivo: Maximizar o lucro
         modelo.objetivo = Objective(
@@ -39,25 +45,32 @@ class Solver():
         )
         
         #  ----------- Definindo as restricoes no modelo ------------
-        
+
+
+        def restricao_tempo(modelo):
+            return sum(modelo.quantidade[s] * next(serv.TMP_SERVICO for serv in self.servicos if serv.DSC_SERVICO == s) for s in modelo.SERVICOS) <= HORAS_TRABALHADAS_DISPONIVEIS * 60
+        print(restricao_tempo(modelo))
+        modelo.restricao_tempo = Constraint(rule=restricao_tempo)
+        print(modelo.restricao_tempo)
+
         # Restricao: quantidade minima de cada servico que deve ser realizada
         def restricao_minima(modelo, s):
             return modelo.quantidade[s] >= PORC_MIN_SERVICO * next(serv.AVG_SERVICO for serv in self.servicos if serv.DSC_SERVICO == s)
         modelo.restricao_minima = Constraint(modelo.SERVICOS, rule=restricao_minima)
         
+        print(modelo.restricao_minima)
+
         # Restricao: quantidade maxima de cada servico que pode ser realizada
         def restricao_maxima(modelo, s):
             return modelo.quantidade[s] <= next(serv.AVG_SERVICO for serv in self.servicos if serv.DSC_SERVICO == s)
         modelo.restricao_maxima = Constraint(modelo.SERVICOS, rule=restricao_maxima)
 
-        # Restricao: tempo total de servicos deve ser menor ou igual ao tempo disponivel
-        modelo.restricao_tempo = Constraint(
-            expr=sum(modelo.quantidade[s.DSC_SERVICO] * s.TMP_SERVICO for s in self.servicos) <= HORAS_TRABALHADAS_DISPONIVEIS
-        )
+
+        print(modelo.restricao_maxima)
 
         # Resolver o problema com GLPK
         solver = SolverFactory("glpk")
-        resultado = solver.solve(modelo)
+        resultado = solver.solve(modelo, tee=True)
 
         modelo.display()
         # Exibir resultados
