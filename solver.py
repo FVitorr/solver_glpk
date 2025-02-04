@@ -46,27 +46,20 @@ class Solver():
         
         #  ----------- Definindo as restricoes no modelo ------------
 
-
+        # Restricao: quantidade maxima de tempo disponivel
         def restricao_tempo(modelo):
             return sum(modelo.quantidade[s] * next(serv.TMP_SERVICO for serv in self.servicos if serv.DSC_SERVICO == s) for s in modelo.SERVICOS) <= HORAS_TRABALHADAS_DISPONIVEIS * 60
-        print(restricao_tempo(modelo))
         modelo.restricao_tempo = Constraint(rule=restricao_tempo)
-        print(modelo.restricao_tempo)
-
+        
         # Restricao: quantidade minima de cada servico que deve ser realizada
         def restricao_minima(modelo, s):
             return modelo.quantidade[s] >= PORC_MIN_SERVICO * next(serv.AVG_SERVICO for serv in self.servicos if serv.DSC_SERVICO == s)
         modelo.restricao_minima = Constraint(modelo.SERVICOS, rule=restricao_minima)
         
-        print(modelo.restricao_minima)
-
         # Restricao: quantidade maxima de cada servico que pode ser realizada
         def restricao_maxima(modelo, s):
             return modelo.quantidade[s] <= next(serv.AVG_SERVICO for serv in self.servicos if serv.DSC_SERVICO == s)
         modelo.restricao_maxima = Constraint(modelo.SERVICOS, rule=restricao_maxima)
-
-
-        print(modelo.restricao_maxima)
 
         # Resolver o problema com GLPK
         solver = SolverFactory("glpk")
